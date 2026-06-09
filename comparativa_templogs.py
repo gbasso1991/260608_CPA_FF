@@ -29,27 +29,43 @@ def lector_templog(path):
 
 
 
-#%% 1- 500uL CPA control Vapor LN2
-print('-'*50,'\n500 uL CPA control - Enfriamiento en Vapor de LN2 - Calentamiento en BT','\n')
-temps_500_CPA_control_vapor = glob("data/*500uL_CPAcontrol_vapor*.csv",recursive=True)
+#%% 1- 500uL EG 55 FF 45 LN2 RF300-152
+print('-'*50,'\nEG 55 FF 45 LN2 RF300-152','\n')
+temps_500_CPA_control_vapor = glob("1_LN2_to_RF/*.csv",recursive=True)
 temps_500_CPA_control_vapor.sort()
 i=1
 for p in temps_500_CPA_control_vapor:
     print('  -',i,p)
     i+=1
     
-fig1,ax1 = plt.subplots(figsize=(9,4.5),constrained_layout=True)
+fig1,(ax1,ax2) = plt.subplots(2,1,figsize=(9,9),constrained_layout=True)
 
-for p in temps_500_CPA_control_vapor:
+for p in temps_500_CPA_control_vapor[:-1]:
     _,time,temp_CH1, _ = lector_templog(p)
     ax1.plot(time,temp_CH1,label=os.path.basename(p).split('.')[0])
-ax1.set_title('1 - CPA control - Vapor LN2 --> BT')
-ax1.set_xlim(0,)
-ax1.grid()
-ax1.legend()
-ax1.set_ylabel('T (°C)')
-ax1.set_xlabel('t (s)')
+ax1.set_title('1.1 - EG 55% FF 45% - LN2 --> RF: 300 kHz - 152 dA',loc='left')
+ax2.set_title('1.2 - EG 55% FF 45% - LN2 --> RT',loc='left')
 
+
+for p in temps_500_CPA_control_vapor[-1:]:
+    _,time,temp_CH1, _ = lector_templog(p)
+    ax2.plot(time,temp_CH1,label=os.path.basename(p).split('.')[0])
+    ax2.plot(time[125:150],temp_CH1[125:150],'.',c='tab:red')
+    ax2.plot(time[300:340],temp_CH1[300:340],'.',c='tab:red')
+ax2.set_xlim(60,400)
+ax1.set_xlim(0,180)
+ax2.set_xlabel('t (s)')
+
+for a in (ax1,ax2):
+    # a.set_xlim(0,)
+    # a.axhline(-120,color='k',ls='--',lw=0.5)
+    a.grid()
+    a.legend()
+    a.set_ylabel('T (°C)')
+#%%
+
+
+#%%
 #%% 2 - 500 uL CPA control LN2 
 print('-'*50,'\n500 uL CPA control - Enfriamiento en LN2 - Calentamiento en BT','\n')
 temps_500_CPA_control_LN2 = glob("data/*500uL_CPAcontrol_LN2*",recursive=True)
