@@ -136,7 +136,6 @@ ax2.set_xlabel('t (s)')
 
 #%%4  
 print('-'*50,'\nEG 51 FF 49 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
-%matplotlib
 temps_500_EG51_FF49 = glob("4_EG51_FF49_LN2_to_RF_150_125_100_075_050/*.csv",recursive=True)
 temps_500_EG51_FF49.sort()
 for p in temps_500_EG51_FF49:
@@ -144,170 +143,30 @@ for p in temps_500_EG51_FF49:
 Idc_values = [15.0, 12.5, 10.0, 7.5, 5.0,0]
 H0=[(h*pendiente_HvsI+ordenada_HvsI)/1000 for h in Idc_values]  
 
-fig3,(ax1,ax2) = plt.subplots(2,1,figsize=(9,9),constrained_layout=True)
+fig4,(ax1,ax2) = plt.subplots(2,1,figsize=(9,9),constrained_layout=True)
 ax1.set_title('4.1 - EG 51% FF 49% - LN2 --> RF - Idc = [150, 125, 100] dA',loc='left')
 ax2.set_title('4.2 - EG 51% FF 49% - LN2 --> RF - Idc = [75, 50, 00] dA',loc='left')
 
 for i,p in enumerate(temps_500_EG51_FF49[:3]):
     _,time,temp_CH1, _ = lector_templog(p)
-    ax1.plot(time,temp_CH1,'.-',label=f'{H0[i]:.1f} kA/m')
+    ax1.plot(time,temp_CH1,label=f'{H0[i]:.1f} kA/m')
 
 for i,p in enumerate(temps_500_EG51_FF49[3:]):
     _,time,temp_CH1, _ = lector_templog(p)
     ax2.plot(time,temp_CH1,label=f'{H0[i+3]:.1f} kA/m' if i!=2 else '0 kA/m')
+ax1.set_xlim(0,160)
+ax2.set_xlim(00,350)
 
 for a in (ax1,ax2):
-    a.set_xlim(0,175)
     a.grid()
     a.legend(title='f = 300 kHz',loc='lower right',shadow=True,frameon=True)
     a.set_ylabel('T (°C)')
-# ax2.set_xlim(80,350)
 ax2.set_xlabel('t (s)')
 
 #%% Salvo figuras
-figs=[fig1,fig2,fig3]
-names=['EG55FF45_LN2_RF','EG55FF45_LN2_RF_Idc','EG53FF47_LN2_RF_Idc']
+figs=[fig1,fig2,fig3,fig4]
+names=['EG55FF45_LN2_RF','EG55FF45_LN2_RF_Idc','EG53FF47_LN2_RF_Idc','EG51FF49_LN2_RF_Idc']
 for i,fig in enumerate(figs):
     fig.savefig(f'{names[i]}.png',dpi=300)
-
-
-
-
-
-#%% 4 -  500uL_CPA_FF_LN2
-print('-'*50,'\n500 uL CPA FF - Enfriamiento en LN2 - Calentamiento en RF','\n')
-temps_500_CPA_FF_LN2 = glob("data/*500uL_CPA_FF_LN2*",recursive=True)
-temps_500_CPA_FF_LN2.sort()
-for p in temps_500_CPA_FF_LN2:
-    print('  -',i,p)
-    i+=1
-
-fig4,ax4 = plt.subplots(figsize=(9,4.5),constrained_layout=True)
-for p in temps_500_CPA_FF_LN2:
-    _,time,temp_CH1, _ = lector_templog(p)
-    ax4.plot(time,temp_CH1,label=os.path.basename(p).split('.')[0])
-ax4.set_title('4 - CPA FF - LN2 --> RF')
-ax4.set_xlim(0,)
-ax4.grid()
-ax4.legend()
-ax4.set_ylabel('T (°C)')
-ax4.set_xlabel('t (s)')
-    
-#%% 5- 1000 uL EG60 agua 40 LN2
-print('-'*50,'\n1000 uL 60% Etilenglicol 40% agua - Enfriamiento en LN2 - Calentamiento en BT','\n')
-temps_1000_EG60_agua40_LN2 = glob("data/*1000uL_EG60_agua40_LN2*",recursive=True)
-temps_1000_EG60_agua40_LN2.sort()
-for p in temps_1000_EG60_agua40_LN2:
-    print('  -',i,p)
-    i+=1
-
-fig5,ax5 = plt.subplots(figsize=(9,4.5),constrained_layout=True)
-for p in temps_1000_EG60_agua40_LN2:
-    _,time,temp_CH1, _ = lector_templog(p)
-    ax5.plot(time,temp_CH1,label=os.path.basename(p).split('.')[0])
-ax5.set_title('5 - 60% Etilenglicol 40% agua - LN2 --> BT')
-ax5.set_xlim(0,)
-ax5.grid()
-ax5.legend()    
-ax5.set_ylabel('T (°C)')
-ax5.set_xlabel('t (s)')
-
-#%% 6- 500 uL EG60 FF40 LN2
-print('-'*50,'\n500 uL 60% Etilenglicol 40% FF - Enfriamiento en LN2 - Calentamiento en RF','\n')
-temps_500_EG60_FF40_LN2 = glob("data/*500uL_EG60_FF40_LN2*",recursive=True)
-temps_500_EG60_FF40_LN2.sort()
-for p in temps_500_EG60_FF40_LN2:
-    print('  -',i,p)
-    i+=1
-fig6,ax6 = plt.subplots(figsize=(9,4.5),constrained_layout=True)
-for p in temps_500_EG60_FF40_LN2:
-    _,time,temp_CH1, _ = lector_templog(p)
-    ax6.plot(time,temp_CH1,'-',label=os.path.basename(p).split('.')[0])
-ax6.set_title('6 - 60% Etilenglicol 40% FF - LN2 --> RF')
-ax6.set_xlim(0,)
-ax6.grid()
-ax6.legend()
-ax6.set_ylabel('T (°C)')
-ax6.set_xlabel('t (s)')
-#%% 7 - 500 uL 500uL_EG55_FF45 LN2
-print('-'*50,'\n500 uL 55% Etilenglicol 45% FF - Enfriamiento en LN2 - Calentamiento en RF','\n')    
-temps_500_EG55_FF45_LN2 = glob("data/*500uL_EG55_FF45_LN2*",recursive=True)
-temps_500_EG55_FF45_LN2.sort()
-for p in temps_500_EG55_FF45_LN2:
-    print('  -',i,p)
-    i+=1
-fig7,ax7 = plt.subplots(figsize=(9,4.5),constrained_layout=True)
-for p in temps_500_EG55_FF45_LN2:
-    _,time,temp_CH1, _ = lector_templog(p)
-    ax7.plot(time,temp_CH1,'-',label=os.path.basename(p).split('.')[0])
-ax7.set_title('7 - 55% Etilenglicol 45% FF - LN2 --> RF')
-ax7.set_xlim(0,)
-ax7.grid()
-ax7.legend()
-ax7.set_ylabel('T (°C)')
-ax7.set_xlabel('t (s)')    
-    
-#%% 8 - 500uL_EG50_FF50_LN2
-print('-'*50,'\n500 uL 50% Etilenglicol 50% FF - Enfriamiento en LN2 - Calentamiento en RF','\n')    
-temps_500_EG50_FF50_LN2 = glob("data/*500uL_EG50_FF50_LN2*",recursive=True)
-temps_500_EG50_FF50_LN2.sort()
-for p in temps_500_EG50_FF50_LN2:
-    print('  -',i,p)
-    i+=1
-fig8,ax8 = plt.subplots(figsize=(9,4.5),constrained_layout=True)
-for p in temps_500_EG50_FF50_LN2:
-    _,time,temp_CH1, _ = lector_templog(p)
-    ax8.plot(time,temp_CH1,'-',label=os.path.basename(p).split('.')[0])
-ax8.set_title('8 - 50% Etilenglicol 50% FF - LN2 --> RF')
-ax8.set_xlim(0,)
-ax8.grid()
-ax8.legend()
-ax8.set_ylabel('T (°C)')
-ax8.set_xlabel('t (s)')
-#%% 9 - 500uL_EG47_FF53_LN2
-print('-'*50,'\n500 uL 47% Etilenglicol 53% FF - Enfriamiento en LN2 - Calentamiento en RF','\n')    
-temps_500_EG47_FF53_LN2 = glob("data/*500uL_EG47_FF53_LN2*",recursive=True)
-temps_500_EG47_FF53_LN2.sort()
-for p in temps_500_EG47_FF53_LN2:
-    print('  -',i,p)
-    i+=1
-fig9,ax9 = plt.subplots(figsize=(9,4.5),constrained_layout=True)
-for p in temps_500_EG47_FF53_LN2:
-    _,time,temp_CH1, _ = lector_templog(p)
-    ax9.plot(time,temp_CH1,'-',label=os.path.basename(p).split('.')[0])
-ax9.set_title('9 - 47% Etilenglicol 53% FF - LN2 --> RF')
-ax9.set_xlim(0,)
-ax9.grid()
-ax9.legend()
-ax9.set_ylabel('T (°C)')
-ax9.set_xlabel('t (s)')
-
-#%% 10- 500ul_EG47_FF53_LN2_BT
-print('-'*50,'\n500 uL 47% Etilenglicol 53% FF - Enfriamiento en LN2 - Calentamiento en BT','\n')    
-temps_500_EG47_FF53_LN2_BT = glob("data/*500ul_EG47_FF53_LN2_BT*",recursive=True)
-temps_500_EG47_FF53_LN2_BT.sort()
-for p in temps_500_EG47_FF53_LN2_BT:
-    print('  -',i,p)
-    i+=1
-fig10,ax10 = plt.subplots(figsize=(9,4.5),constrained_layout=True)
-for p in temps_500_EG47_FF53_LN2_BT:
-    _,time,temp_CH1, _ = lector_templog(p)
-    ax10.plot(time,temp_CH1,'-',label=os.path.basename(p).split('.')[0])
-ax10.set_title('10 - 47% Etilenglicol 53% FF - LN2 --> BT')
-ax10.set_xlim(0,)
-ax10.grid()
-ax10.legend()
-ax10.set_ylabel('T (°C)')
-ax10.set_xlabel('t (s)')        
-
-
-# %% Salvo todas las figuras
-figs=[fig1,fig2,fig3,fig4,fig5,fig6,fig7,fig8,fig9,fig10]
-for i,fig in enumerate(figs):
-    fig.savefig(f'figura_{i+1}.png',dpi=300)
-#%%
-
-
-
 
 #%%
