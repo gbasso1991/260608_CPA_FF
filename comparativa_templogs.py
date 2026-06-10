@@ -8,6 +8,8 @@ import os
 import chardet
 import re
 from datetime import datetime
+pendiente_HvsI = 3716.3 # 1/m
+ordenada_HvsI = 1297.0 # A/m
 # from clase_resultados import ResultadosESAR
 #%% Lector Templog
 def lector_templog(path):
@@ -116,11 +118,11 @@ fig3,(ax1,ax2) = plt.subplots(2,1,figsize=(9,9),constrained_layout=True)
 ax1.set_title('3.1 - EG 53% FF 47% - LN2 --> RF - Idc = [150, 125, 100] dA',loc='left')
 ax2.set_title('3.2 - EG 53% FF 47% - LN2 --> RF - Idc = [75, 50, 00] dA',loc='left')
 
-for i,p in enumerate(temps_500_EG53_FF47_2[:3]):
+for i,p in enumerate(temps_500_EG53_FF47[:3]):
     _,time,temp_CH1, _ = lector_templog(p)
     ax1.plot(time,temp_CH1,label=f'{H0[i]:.1f} kA/m')
 
-for i,p in enumerate(temps_500_EG53_FF47_2[3:]):
+for i,p in enumerate(temps_500_EG53_FF47[3:]):
     _,time,temp_CH1, _ = lector_templog(p)
     ax2.plot(time,temp_CH1,label=f'{H0[i+3]:.1f} kA/m' if i!=2 else '0 kA/m')
 
@@ -130,9 +132,43 @@ for a in (ax1,ax2):
     a.legend(title='f = 300 kHz',loc='lower right',shadow=True,frameon=True)
     a.set_ylabel('T (°C)')
 ax2.set_xlim(80,350)
-
 ax2.set_xlabel('t (s)')
 
+#%%4  
+print('-'*50,'\nEG 51 FF 49 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
+%matplotlib
+temps_500_EG51_FF49 = glob("4_EG51_FF49_LN2_to_RF_150_125_100_075_050/*.csv",recursive=True)
+temps_500_EG51_FF49.sort()
+for p in temps_500_EG51_FF49:
+    print('  -',os.path.basename(p))
+Idc_values = [15.0, 12.5, 10.0, 7.5, 5.0,0]
+H0=[(h*pendiente_HvsI+ordenada_HvsI)/1000 for h in Idc_values]  
+
+fig3,(ax1,ax2) = plt.subplots(2,1,figsize=(9,9),constrained_layout=True)
+ax1.set_title('4.1 - EG 51% FF 49% - LN2 --> RF - Idc = [150, 125, 100] dA',loc='left')
+ax2.set_title('4.2 - EG 51% FF 49% - LN2 --> RF - Idc = [75, 50, 00] dA',loc='left')
+
+for i,p in enumerate(temps_500_EG51_FF49[:3]):
+    _,time,temp_CH1, _ = lector_templog(p)
+    ax1.plot(time,temp_CH1,'.-',label=f'{H0[i]:.1f} kA/m')
+
+for i,p in enumerate(temps_500_EG51_FF49[3:]):
+    _,time,temp_CH1, _ = lector_templog(p)
+    ax2.plot(time,temp_CH1,label=f'{H0[i+3]:.1f} kA/m' if i!=2 else '0 kA/m')
+
+for a in (ax1,ax2):
+    a.set_xlim(0,175)
+    a.grid()
+    a.legend(title='f = 300 kHz',loc='lower right',shadow=True,frameon=True)
+    a.set_ylabel('T (°C)')
+# ax2.set_xlim(80,350)
+ax2.set_xlabel('t (s)')
+
+#%% Salvo figuras
+figs=[fig1,fig2,fig3]
+names=['EG55FF45_LN2_RF','EG55FF45_LN2_RF_Idc','EG53FF47_LN2_RF_Idc']
+for i,fig in enumerate(figs):
+    fig.savefig(f'{names[i]}.png',dpi=300)
 
 
 
