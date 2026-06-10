@@ -82,6 +82,8 @@ for p in temps_500_EG55_FF45_2:
     print('  -',os.path.basename(p))
 Idc_values = [15.0, 12.5, 10.0, 7.5, 5.0,0]
 H0=[(h*pendiente_HvsI+ordenada_HvsI)/1000 for h in Idc_values]  
+t=[]
+dT=[]
 
 fig2,(ax1,ax2) = plt.subplots(2,1,figsize=(9,9),constrained_layout=True)
 ax1.set_title('2.1 - EG 55% FF 45% - LN2 --> RF - Idc = [150, 125, 100] dA',loc='left')
@@ -89,7 +91,10 @@ ax2.set_title('2.2 - EG 55% FF 45% - LN2 --> RF - Idc = [75, 50, 00] dA',loc='le
 
 for i,p in enumerate(temps_500_EG55_FF45_2[:3]):
     _,time,temp_CH1, _ = lector_templog(p)
+    t.append(time)
+    dT.append(np.gradient(temp_CH1,time))
     ax1.plot(time,temp_CH1,label=f'{H0[i]:.1f} kA/m')
+    ax1.plot(time,(np.gradient(temp_CH1,time)))
 
 for i,p in enumerate(temps_500_EG55_FF45_2[3:]):
     _,time,temp_CH1, _ = lector_templog(p)
@@ -103,6 +108,12 @@ for a in (ax1,ax2):
 ax2.set_xlim(80,350)
 
 ax2.set_xlabel('t (s)')
+#%%
+fig2a,ax=plt.subplots(1,1,figsize=(9,4),constrained_layout=True)
+for i,p in enumerate(temps_500_EG55_FF45_2[:3]):
+    ax.plot(t[i],dT[i],label=f'{H0[i]:.1f} kA/m') 
+
+
 
 #%%3  
 print('-'*50,'\nEG 53 FF 47 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
@@ -169,4 +180,6 @@ names=['EG55FF45_LN2_RF','EG55FF45_LN2_RF_Idc','EG53FF47_LN2_RF_Idc','EG51FF49_L
 for i,fig in enumerate(figs):
     fig.savefig(f'{names[i]}.png',dpi=300)
 
-#%%
+#%% Veo derivadas
+
+ 
