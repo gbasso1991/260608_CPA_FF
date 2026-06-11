@@ -73,17 +73,20 @@ for a in (ax1,ax2):
     a.grid()
     a.set_ylabel('T (°C)')
 
-#%% 2 - 500 uL 
+#%% 2 - 500 uL EG 55 FF 45 LN2 RF300
 print('-'*50,'\nEG 55 FF 45 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
 
 temps_500_EG55_FF45_2 = glob("2_EG55_FF45_LN2_to_RF_150_125_100_075_050/*.csv",recursive=True)
 temps_500_EG55_FF45_2.sort()
 for p in temps_500_EG55_FF45_2:
     print('  -',os.path.basename(p))
+print('\n')
+
 Idc_values = [15.0, 12.5, 10.0, 7.5, 5.0,0]
 H0=[(h*pendiente_HvsI+ordenada_HvsI)/1000 for h in Idc_values]  
-t=[]
-dT=[]
+t,t_min=[],[]
+T,T_min=[],[]
+Indx_min,dT=[],[]
 
 fig2,(ax1,ax2) = plt.subplots(2,1,figsize=(9,9),constrained_layout=True)
 ax1.set_title('2.1 - EG 55% FF 45% - LN2 --> RF - Idc = [150, 125, 100] dA',loc='left')
@@ -92,12 +95,26 @@ ax2.set_title('2.2 - EG 55% FF 45% - LN2 --> RF - Idc = [75, 50, 00] dA',loc='le
 for i,p in enumerate(temps_500_EG55_FF45_2[:3]):
     _,time,temp_CH1, _ = lector_templog(p)
     t.append(time)
+    T.append(temp_CH1)
     dT.append(np.gradient(temp_CH1,time))
+    indx_min=np.nonzero(temp_CH1==min(temp_CH1))[0]
+    t_min.append(time[indx_min])
+    T_min.append(temp_CH1[indx_min])
+    Indx_min.append(indx_min[0])
+    print(f'Temp minima = {temp_CH1[np.nonzero(temp_CH1==min(temp_CH1))][0]:.1f} C alcanzada en {time[np.nonzero(temp_CH1==min(temp_CH1))][0]:.1f} s')
     ax1.plot(time,temp_CH1,label=f'{H0[i]:.1f} kA/m')
     ax1.plot(time,(np.gradient(temp_CH1,time)))
 
 for i,p in enumerate(temps_500_EG55_FF45_2[3:]):
     _,time,temp_CH1, _ = lector_templog(p)
+    t.append(time)
+    T.append(temp_CH1)
+    dT.append(np.gradient(temp_CH1,time))
+    indx_min=np.nonzero(temp_CH1==min(temp_CH1))[0]
+    t_min.append(time[indx_min])
+    T_min.append(temp_CH1[indx_min])
+    Indx_min.append(indx_min[0])
+    print(f'Temp minima = {temp_CH1[np.nonzero(temp_CH1==min(temp_CH1))][0]:.1f} C alcanzada en {time[np.nonzero(temp_CH1==min(temp_CH1))][0]:.1f} s')
     ax2.plot(time,temp_CH1,label=f'{H0[i+3]:.1f} kA/m' if i!=2 else '0 kA/m')
 
 for a in (ax1,ax2):
@@ -106,12 +123,56 @@ for a in (ax1,ax2):
     a.legend(title='f = 300 kHz',loc='lower right',shadow=True,frameon=True)
     a.set_ylabel('T (°C)')
 ax2.set_xlim(80,350)
-
 ax2.set_xlabel('t (s)')
-#%%
-fig2a,ax=plt.subplots(1,1,figsize=(9,4),constrained_layout=True)
-for i,p in enumerate(temps_500_EG55_FF45_2[:3]):
-    ax.plot(t[i],dT[i],label=f'{H0[i]:.1f} kA/m') 
+
+#%% Gradiente 
+col=['C0','C1','C2']
+fig23,axs=plt.subplots(3,1,figsize=(10,5.5),constrained_layout=True,sharex=True)
+
+for i,(x,y,z) in enumerate(zip(t[:3],T[:3],dT[:3])):
+    l1 = axs[i].plot(x[Indx_min[i]:],z[Indx_min[i]:],'.-',c=col[i],label='dT/dt')
+    ax2 = axs[i].twinx()
+    # ax2.set_yscale('log')
+    #ax2.set_ylim(93,273)
+    ax2.set_ylabel('T (K)')
+    l2 = ax2.plot(x[Indx_min[i]:],y[Indx_min[i]:]+273,c=col[i],label='T')
+
+    handles = l1 + l2
+    labels = [h.get_label() for h in handles]
+
+    axs[i].legend(handles, labels, frameon=True, shadow=True,title=f'H$_0$ = {H0[i]:.1f} kA/m',loc='lower right',ncols=2)
+
+for a in axs:
+    a.set_ylabel('dT/dt (°C/s)')
+    a.set_xlim(min(t_min[:3])[0]-1,)
+    a.grid()
+axs[2].set_xlabel('t (s)')
+fig23.suptitle('2.3 - EG 55% FF 45% - LN2 --> RF - Idc = [150, 125, 100] dA')
+
+fig24,axs=plt.subplots(3,1,figsize=(10,5.5),constrained_layout=True,sharex=True)
+
+for i,(x,y,z) in enumerate(zip(t[3:],T[3:],dT[3:])):
+    l1 = axs[i].plot(x[Indx_min[i]:],z[Indx_min[i]:],'.-',c=col[i],label='dT/dt')
+    ax2 = axs[i].twinx()
+    ax2.set_yscale('log')
+    ax2.set_ylabel('T (K)')
+    l2 = ax2.plot(x[Indx_min[i]:],y[Indx_min[i]:]+273,c=col[i],label='T')
+    ax2.set_ylim(98,273)
+
+    handles = l1 + l2
+    labels = [h.get_label() for h in handles]
+
+    axs[i].legend(handles, labels, frameon=True, shadow=True,title=f'H$_0$ = {H0[i]:.1f} kA/m',loc='lower right',ncols=2)
+
+for a in axs:
+    a.set_ylabel('dT/dt (°C/s)')
+    a.set_xlim(min(np.concatenate(t_min)[3:])-5,300)
+    # a.set_ylim(bottom=0)
+    a.grid()
+axs[2].set_xlabel('t (s)')
+fig24.suptitle('2.4 - EG 55% FF 45% - LN2 --> RF - Idc = [075, 050, 100] dA')
+
+
 
 
 
