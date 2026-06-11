@@ -172,7 +172,9 @@ for a in axs:
 axs[2].set_xlabel('t (s)')
 fig24.suptitle('2.4 - EG 55% FF 45% - LN2 --> RF - Idc = [075, 050, 100] dA')
 
-
+#salvo figuras
+fig23.savefig('gradiente_temperatura_150_125_100.png',dpi=300)
+fig24.savefig('gradiente_temperatura_075_050_000.png',dpi=300)
 
 
 
