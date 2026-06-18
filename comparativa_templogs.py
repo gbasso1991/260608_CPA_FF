@@ -130,8 +130,9 @@ ax.grid()
 ax.set_xlabel('t (s)')
 fig14.suptitle('1.4 - EG 55% FF 45% - LN2 --> RT')
 
-fig13.savefig('gradiente_temperatura_RF.png',dpi=300)
-fig14.savefig('gradiente_temperatura_RT.png',dpi=300)
+fig1.savefig('1_EG55FF45_LN2_RF',dpi=300)
+fig13.savefig('1_grad_temperatura_RF.png',dpi=300)
+fig14.savefig('1_grad_temperatura_RT.png',dpi=300)
 #%% 2 - 500 uL EG 55 FF 45 LN2 RF300
 print('-'*50,'\nEG 55 FF 45 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
 
@@ -240,8 +241,9 @@ axs[2].set_xlabel('t (s)')
 fig24.suptitle('2.4 - EG 55% FF 45% - LN2 --> RF - Idc = [075, 050, 100] dA')
 
 #salvo figuras
-fig23.savefig('gradiente_temperatura_150_125_100.png',dpi=300)
-fig24.savefig('gradiente_temperatura_075_050_000.png',dpi=300)
+fig2.savefig('2_EG55_FF45_LN2_to_RF_150_125_100.png',dpi=300)
+fig23.savefig('2_gradiente_temperatura_150_125_100.png',dpi=300)
+fig24.savefig('2_gradiente_temperatura_075_050_000.png',dpi=300)
 
 #%%3 
 print('-'*50,'\nEG 53 FF 47 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
@@ -353,8 +355,9 @@ axs[2].set_xlabel('t (s)')
 fig34.suptitle('3.4 - EG 53% FF 47% - LN2 --> RF - Idc = [075, 050, 100] dA')
 
 #salvo figuras
-fig33.savefig('gradiente_temperatura_EG53FF47_150_125_100.png',dpi=300)
-fig34.savefig('gradiente_temperatura_EG53FF47_075_050_000.png',dpi=300)
+fig3.savefig('3_EG53FF47_LN2_RF_150_125_100.png',dpi=300)
+fig33.savefig('3_grad_temperatura_EG53FF47_150_125_100.png',dpi=300)
+fig34.savefig('3_grad_temperatura_EG53FF47_075_050_000.png',dpi=300)
 #%%4  
 print('-'*50,'\nEG 51 FF 49 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
 temps_500_EG51_FF49 = glob("4_EG51_FF49_LN2_to_RF_150_125_100_075_050/*.csv",recursive=True)
@@ -406,7 +409,7 @@ for a in (ax1,ax2):
     a.set_ylabel('T (°C)')
 ax2.set_xlabel('t (s)')
 
-#%% Gradiente
+#% Gradiente
 col=['C0','C1','C2']
 fig43,axs=plt.subplots(3,1,figsize=(10,5.5),constrained_layout=True,sharex=True)
 
@@ -464,14 +467,29 @@ for a in axs:
 axs[2].set_xlabel('t (s)')
 fig44.suptitle('4.4 - EG 51% FF 49% - LN2 --> RF - Idc = [075, 050, 100] dA')
 
-fig43.savefig('gradiente_temperatura_EG51FF49_150_125_100.png',dpi=300)
-fig44.savefig('gradiente_temperatura_EG51FF49_075_050_000.png',dpi=300)
-#%% Salvo figuras
-figs=[fig1,fig2,fig3,fig4]
-names=['EG55FF45_LN2_RF','EG55FF45_LN2_RF_Idc','EG53FF47_LN2_RF_Idc','EG51FF49_LN2_RF_Idc']
-for i,fig in enumerate(figs):
-    fig.savefig(f'{names[i]}.png',dpi=300)
+fig4.savefig('4_EG51FF49_LN2_RF_Idc.png',dpi=300)
+fig43.savefig('4_grad_temperatura_EG51FF49_150_125_100.png',dpi=300)
+fig44.savefig('4_grad_temperatura_EG51FF49_075_050_000.png',dpi=300)
+# #%% Salvo figuras
+# figs=[fig1,fig2,fig3,fig4]
+# names=['EG55FF45_LN2_RF','EG55FF45_LN2_RF_Idc','EG53FF47_LN2_RF_Idc','EG51FF49_LN2_RF_Idc']
+# for i,fig in enumerate(figs):
+#     fig.savefig(f'{names[i]}.png',dpi=300)
 
 #%% Veo derivadas
 
- 
+diam_FR = np.mean([ufloat(4.88,0.02),ufloat(5.30,0.02),ufloat(5.18,0.02),
+        ufloat(5.00,0.02), ufloat(5.20,0.02),ufloat(5.04,0.02),
+        ufloat(5.34,0.02),ufloat(5.48,0.02),ufloat(5.40,0.02)])
+L_FR = np.mean([ufloat(8.32,0.02),ufloat(8.14,0.02),ufloat(8.10,0.02),ufloat(8.18,0.02)])
+
+diam_PM= np.mean([ufloat(4.66,0.02),ufloat(4.70,0.02),ufloat(4.68,0.02),
+                  ufloat(4.74,0.02),ufloat(4.70,0.02),])
+L_PM =ufloat(10,1)
+
+
+print(f'''Diametro FR = {diam_FR:.1uS} mm
+Longitud FR = {L_FR:.1uS} mm
+Diametro PM = {diam_PM:.1uS} mm
+Longitud PM = {L_PM:.2uS} mm''')
+# %%
