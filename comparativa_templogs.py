@@ -532,22 +532,36 @@ for n in [g,h]:
 plt.suptitle('EG 55% FF 45% - LN2 --> RF - Idc = [150, 050] dA')    
 plt.savefig('nueva_comparativa_templogs.png',dpi=300)
 # %%
+%matplotlib 
 fig,(ax,ax2) = plt.subplots(2,1,figsize=(10,8),constrained_layout=True)
 
 
 for i,p in enumerate(temps_500_EG55_FF45_2):
     _,time,temp, _ = lector_templog(p)
-    dT=savgol_filter(temp,window_length=11,polyorder=3,deriv=1,delta=1.0)
-    dTT=savgol_filter(temp,window_length=11,polyorder=3,deriv=2,delta=1.0)
+    indx_min=np.nonzero(temp==min(temp))[0][0]
+    indx_max=np.nonzero(temp==max(temp[indx_min:]))[0][0]
+    print(temp[indx_min],'-',temp[indx_max])
+    t = time[indx_min:indx_max]    
+    T = temp[indx_min:indx_max]
+
+
+    mask= (T > -160) & (T < -100)
+
+    T=T[mask]
+    t=t[mask]
+    dT=savgol_filter(T,window_length=11,polyorder=3,deriv=1,delta=1.0)
+    dTT=savgol_filter(T,window_length=11,polyorder=3,deriv=2,delta=1.0)
     curv=np.abs(dTT)/(1+dT**2)**1.5
-    ax.plot(time,temp,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')
-    ax2.plot(time,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')   
+    #ax.set_xlim(0,250)
+    ax.plot(t-t[0],T,'.-',label=f'H$_0$ = {H0[i]:.0f} kA/m')
+    ax2.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')   
+    # ax2.set_xlim(-170,-100)
 
 for a in [ax,ax2]:
-    a.set_xlim(80,140)
     a.set_xlabel('t (s)')
     a.set_ylabel('T (°C)')
     a.grid()
-    a.legend()
+    a.legend(ncol=2)
     
 plt.savefig('nueva2_comparativa_templogs.png',dpi=300)
+# %%
