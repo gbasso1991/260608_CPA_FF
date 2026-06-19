@@ -133,7 +133,7 @@ fig14.suptitle('1.4 - EG 55% FF 45% - LN2 --> RT')
 fig1.savefig('1_EG55FF45_LN2_RF',dpi=300)
 fig13.savefig('1_grad_temperatura_RF.png',dpi=300)
 fig14.savefig('1_grad_temperatura_RT.png',dpi=300)
-#%% 2 - 500 uL EG 55 FF 45 LN2 RF300
+#%% 2 - 500 uL EG 55 FF 45 LN2 RF300 Idc [150, 125, 100, 075, 050]
 print('-'*50,'\nEG 55 FF 45 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
 
 temps_500_EG55_FF45_2 = glob("2_EG55_FF45_LN2_to_RF_150_125_100_075_050/*.csv",recursive=True)
@@ -230,7 +230,7 @@ for i,(x,y,z) in enumerate(zip(t[3:],T[3:],dT[3:])):
     handles = l1 + l2
     labels = [h.get_label() for h in handles]
 
-    axs[i].legend(handles, labels, frameon=True, shadow=True,title=f'H$_0$ = {H0[i]:.1f} kA/m',loc='lower right',ncol=2)
+    axs[i].legend(handles, labels, frameon=True, shadow=True,title=f'H$_0$ = {H0[i+3]:.1f} kA/m',loc='lower right',ncol=2)
 
 for a in axs:
     a.set_ylabel('dT/dt (°C/s)')
@@ -245,7 +245,7 @@ fig2.savefig('2_EG55_FF45_LN2_to_RF_150_125_100.png',dpi=300)
 fig23.savefig('2_gradiente_temperatura_150_125_100.png',dpi=300)
 fig24.savefig('2_gradiente_temperatura_075_050_000.png',dpi=300)
 
-#%%3 
+#%%3 - 500 uL EG 53 FF 47 LN2 RF 300 Idc = [150, 125, 100, 075, 050]
 print('-'*50,'\nEG 53 FF 47 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
 
 temps_500_EG53_FF47 = glob("3_EG53_FF47_LN2_to_RF_150_125_100_075_050/*.csv",recursive=True)
@@ -358,8 +358,8 @@ fig34.suptitle('3.4 - EG 53% FF 47% - LN2 --> RF - Idc = [075, 050, 100] dA')
 fig3.savefig('3_EG53FF47_LN2_RF_150_125_100.png',dpi=300)
 fig33.savefig('3_grad_temperatura_EG53FF47_150_125_100.png',dpi=300)
 fig34.savefig('3_grad_temperatura_EG53FF47_075_050_000.png',dpi=300)
-#%%4  
-print('-'*50,'\nEG 51 FF 49 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
+#%%4 - 500 uL EG 51 FF 49 LN2 RF 300 - Idc= [150, 125, 100, 075, 050]
+print('-'*50,'\nEG 51 FF 49 LN2 RF300 - Idc= [150, 125, 100, 075, 050] dA','\n')
 temps_500_EG51_FF49 = glob("4_EG51_FF49_LN2_to_RF_150_125_100_075_050/*.csv",recursive=True)
 temps_500_EG51_FF49.sort()
 for p in temps_500_EG51_FF49:
@@ -476,20 +476,78 @@ fig44.savefig('4_grad_temperatura_EG51FF49_075_050_000.png',dpi=300)
 # for i,fig in enumerate(figs):
 #     fig.savefig(f'{names[i]}.png',dpi=300)
 
-#%% Veo derivadas
+#%% 19 Junio 
+''' Ahora pruebo usando del filtro Savitzky-Golay: Ajusta un polinomio local y deriva el polinomio.
+'''
+from scipy.signal import savgol_filter
+_,t_2_57, T_2_57,_ = lector_templog(temps_500_EG55_FF45_2[0])
+_,t_2_20, T_2_20,_ = lector_templog(temps_500_EG55_FF45_2[-2])
 
-diam_FR = np.mean([ufloat(4.88,0.02),ufloat(5.30,0.02),ufloat(5.18,0.02),
-        ufloat(5.00,0.02), ufloat(5.20,0.02),ufloat(5.04,0.02),
-        ufloat(5.34,0.02),ufloat(5.48,0.02),ufloat(5.40,0.02)])
-L_FR = np.mean([ufloat(8.32,0.02),ufloat(8.14,0.02),ufloat(8.10,0.02),ufloat(8.18,0.02)])
+dTdt_2_57 = savgol_filter(T_2_57,window_length=11,polyorder=3,deriv=1,delta=1.0)
+dTdt_2_20 = savgol_filter(T_2_20,window_length=11,polyorder=3,deriv=1,delta=1.0)
 
-diam_PM= np.mean([ufloat(4.66,0.02),ufloat(4.70,0.02),ufloat(4.68,0.02),
-                  ufloat(4.74,0.02),ufloat(4.70,0.02),])
-L_PM =ufloat(10,1)
+dTTdt_2_57 = savgol_filter(T_2_57,window_length=11,polyorder=3,deriv=2,delta=1.0)
+dTTdt_2_20 = savgol_filter(T_2_20,window_length=11,polyorder=3,deriv=2,delta=1.0)
 
+curv_2_57 = np.abs(dTTdt_2_57)/(1+dTdt_2_57**2)**1.5
+curv_2_20 = np.abs(dTTdt_2_20)/(1+dTdt_2_20**2)**1.5
 
-print(f'''Diametro FR = {diam_FR:.1uS} mm
-Longitud FR = {L_FR:.1uS} mm
-Diametro PM = {diam_PM:.1uS} mm
-Longitud PM = {L_PM:.2uS} mm''')
+fig,((a,b),(c,d),(e,f),(g,h))= plt.subplots(nrows=4,ncols=2,figsize=(15,10),sharex='col',sharey=False,constrained_layout=True)
+
+a.plot(t_2_57,T_2_57,'.-',c='C0',label='T')
+b.plot(t_2_20,T_2_20,'.-',c='C1',label='T')
+
+c.plot(t_2_57,dTdt_2_57,'.-',c='C0',label='SG dT/dt')
+c.plot(t_2_57,np.gradient(T_2_57,t_2_57),'.-',c='C2',alpha=0.7,label='np.grad dT/dt')
+
+d.plot(t_2_20,dTdt_2_20,'.-',c='C1',label='SG dT/dt')
+d.plot(t_2_20,np.gradient(T_2_20,t_2_20),'.-',c='C3',alpha=0.7,label='np.grad dT/dt')
+
+e.plot(t_2_57,dTTdt_2_57,'.-',c='C0',label='SG d²T/dt')
+e.plot(t_2_57,np.gradient(np.gradient(T_2_57,t_2_57),t_2_57),'.-',c='C2',alpha=0.7,label='np.grad d²T/dt²')
+
+f.plot(t_2_20,dTTdt_2_20,'.-',c='C1',label='SG d²T/dt²')
+f.plot(t_2_20,np.gradient(np.gradient(T_2_20,t_2_20),t_2_20),'.-',c='C3',alpha=0.7,label='np.grad d²T/dt²')
+
+g.plot(t_2_57,curv_2_57,'.-',c='C0',label='Curvatura')
+h.plot(t_2_20,curv_2_20,'.-',c='C1',label='Curvatura')
+
+a.set_title('57 kA/m')
+b.set_title('20 kA/m')
+b.set_ylim(-175,-100)
+f.set_ylim(-0.4,0.4)
+for m in [a,c,e,g]:
+    m.set_xlim(80,130)
+    m.grid()
+    m.legend()
+
+for n in [b,d,f,h]:
+    n.set_xlim(80,200)
+    n.grid()
+    n.legend()
+
+for n in [g,h]:
+    n.set_xlabel('t (s)')
+    
+plt.suptitle('EG 55% FF 45% - LN2 --> RF - Idc = [150, 050] dA')    
+plt.savefig('nueva_comparativa_templogs.png',dpi=300)
 # %%
+fig,(ax,ax2) = plt.subplots(2,1,figsize=(10,8),constrained_layout=True)
+
+
+for i,p in enumerate(temps_500_EG55_FF45_2):
+    _,time,temp, _ = lector_templog(p)
+    dT=savgol_filter(temp,window_length=11,polyorder=3,deriv=1,delta=1.0)
+    dTT=savgol_filter(temp,window_length=11,polyorder=3,deriv=2,delta=1.0)
+    curv=np.abs(dTT)/(1+dT**2)**1.5
+    ax.plot(time,temp,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')
+    ax2.plot(time,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')   
+
+for a in [ax,ax2]:
+    a.set_xlim(80,140)
+    a.set_xlabel('t (s)')
+    a.set_ylabel('T (°C)')
+    a.grid()
+    a.legend()
+    
+plt.savefig('nueva2_comparativa_templogs.png',dpi=300)
