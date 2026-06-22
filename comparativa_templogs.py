@@ -28,8 +28,12 @@ def lector_templog(path):
 
     time = np.array([(t-timestamp[0]).total_seconds() for t in timestamp])
     return timestamp,time,temp_CH1, temp_CH2
-
-
+#%% Curvatura
+def curvatura(T):
+    dT=savgol_filter(T,window_length=11,polyorder=3,deriv=1,delta=1.0)
+    dTT=savgol_filter(T,window_length=11,polyorder=3,deriv=2,delta=1.0)
+    curv=np.abs(dTT)/(1+dT**2)**1.5
+    return dT,dTT,curv
 
 #%% 1- 500uL EG 55 FF 45 LN2 RF300-152
 print('-'*50,'\nEG 55 FF 45 LN2 RF300-152','\n')
@@ -44,7 +48,6 @@ fig1,(ax1,ax2) = plt.subplots(2,1,figsize=(9,9),constrained_layout=True)
 ax1.set_title('1.1 - EG 55% FF 45% - LN2 --> RF',loc='left')
 ax2.set_title('1.2 - EG 55% FF 45% - LN2 --> RT',loc='left')
 
-
 for p in temps_500_CPA_EG55FF45_1[:-1]:
     _,time,temp_CH1, _ = lector_templog(p)
     ax1.plot(time,temp_CH1,label=os.path.basename(p).split('.')[0])
@@ -52,7 +55,6 @@ for p in temps_500_CPA_EG55FF45_1[:-1]:
 _,time_RT,temp_CH1_RT, _ = lector_templog(temps_500_CPA_EG55FF45_1[-1])
 ax1.plot(time_RT,temp_CH1_RT,'C3--',label=os.path.basename(temps_500_CPA_EG55FF45_1[-1]).split('.')[0])
     
-
 for p in temps_500_CPA_EG55FF45_1[-1:]:
     _,time,temp_CH1, _ = lector_templog(p)
     ax2.plot(time,temp_CH1,'C3--',label=os.path.basename(p).split('.')[0])
@@ -135,7 +137,6 @@ fig13.savefig('1_grad_temperatura_RF.png',dpi=300)
 fig14.savefig('1_grad_temperatura_RT.png',dpi=300)
 #%% 2 - 500 uL EG 55 FF 45 LN2 RF300 Idc [150, 125, 100, 075, 050]
 print('-'*50,'\nEG 55 FF 45 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
-
 temps_500_EG55_FF45_2 = glob("2_EG55_FF45_LN2_to_RF_150_125_100_075_050/*.csv",recursive=True)
 temps_500_EG55_FF45_2.sort()
 for p in temps_500_EG55_FF45_2:
@@ -239,11 +240,50 @@ for a in axs:
     a.grid()
 axs[2].set_xlabel('t (s)')
 fig24.suptitle('2.4 - EG 55% FF 45% - LN2 --> RF - Idc = [075, 050, 100] dA')
+#%%
+fig25,(ax,ax2,ax3) = plt.subplots(3,1,figsize=(10,10),constrained_layout=True)
+ax.set_title('Temp vs time',loc='left')
+ax2.set_title('Curvatura vs Temp',loc='left')
+ax3.set_title('Curvatura vs Temp',loc='left')
+
+for i,p in enumerate(temps_500_EG55_FF45_2):
+    _,time,temp, _ = lector_templog(p)
+    indx_min=np.nonzero(temp==min(temp))[0][0]
+    indx_max=np.nonzero(temp==max(temp[indx_min:]))[0][0]
+    print(temp[indx_min],'-',temp[indx_max])
+    t = time[indx_min:indx_max]    
+    T = temp[indx_min:indx_max]
+    mask= (T > -160) & (T <0)
+    T=T[mask]
+    t=t[mask]
+    _,_,curv = curvatura(T)
+    ax.plot(t-t[0],T,'.-',label=f'H$_0$ = {H0[i]:.0f} kA/m')
+    ax2.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m') 
+    ax3.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')  
+ax.axhspan(-150,-130,color='tab:red',alpha=0.2,zorder=-1)
+ax.axhspan(-60,-40,color='tab:orange',alpha=0.2,zorder=-1)
+
+ax2.axvspan(-150,-130,color='tab:red',alpha=0.2,zorder=-1)
+ax3.axvspan(-60,-40,color='tab:orange',alpha=0.2,zorder=-1)
+
+ax.set_xlim(0,250)
+ax2.set_xlim(-160,-100)
+ax3.set_xlim(-100,00)
+ax.set_xlabel('t (s)')
+ax.set_ylabel('T (°C)')
+ax2.set_ylabel('Curvatura')
+ax3.set_ylabel('Curvatura')
+ax3.set_xlabel('T (°C)')
+for a in [ax,ax2,ax3]:
+    a.grid()
+    a.legend(ncol=2)
+plt.suptitle('EG 55% FF 45%\nLN2 --> RF\nIdc = [150, 125, 100, 075, 050, 000] dA')    
 
 #salvo figuras
 fig2.savefig('2_EG55_FF45_LN2_to_RF_150_125_100.png',dpi=300)
-fig23.savefig('2_gradiente_temperatura_150_125_100.png',dpi=300)
-fig24.savefig('2_gradiente_temperatura_075_050_000.png',dpi=300)
+fig23.savefig('2_EG55_FF45_grad_temp_150_125_100.png',dpi=300)
+fig24.savefig('2_EG55_FF45_grad_temp_075_050_000.png',dpi=300)
+fig25.savefig('2_EG55_FF45_templogs_curvatura.png',dpi=300)
 
 #%%3 - 500 uL EG 53 FF 47 LN2 RF 300 Idc = [150, 125, 100, 075, 050]
 print('-'*50,'\nEG 53 FF 47 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
@@ -354,10 +394,50 @@ for a in axs:
 axs[2].set_xlabel('t (s)')
 fig34.suptitle('3.4 - EG 53% FF 47% - LN2 --> RF - Idc = [075, 050, 100] dA')
 
+fig35,(ax,ax2,ax3) = plt.subplots(3,1,figsize=(10,10),constrained_layout=True)
+ax.set_title('Temp vs time',loc='left')
+ax2.set_title('Curvatura vs Temp',loc='left')
+ax3.set_title('Curvatura vs Temp',loc='left')
+
+for i,p in enumerate(temps_500_EG53_FF47):
+    _,time,temp, _ = lector_templog(p)
+    indx_min=np.nonzero(temp==min(temp))[0][0]
+    indx_max=np.nonzero(temp==max(temp[indx_min:]))[0][0]
+    print(temp[indx_min],'-',temp[indx_max])
+    t = time[indx_min:indx_max]    
+    T = temp[indx_min:indx_max]
+    mask= (T > -160) & (T <0)
+    T=T[mask]
+    t=t[mask]
+    _,_,curv = curvatura(T)
+    ax.plot(t-t[0],T,'.-',label=f'H$_0$ = {H0[i]:.0f} kA/m')
+    ax2.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m') 
+    ax3.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')  
+ax.axhspan(-150,-130,color='tab:red',alpha=0.2,zorder=-1)
+ax.axhspan(-70,-40,color='tab:orange',alpha=0.2,zorder=-1)
+
+ax2.axvspan(-150,-130,color='tab:red',alpha=0.2,zorder=-1)
+ax3.axvspan(-70,-40,color='tab:orange',alpha=0.2,zorder=-1)
+
+ax.set_xlim(0,250)
+ax2.set_xlim(-160,-100)
+ax3.set_xlim(-100,00)
+ax.set_xlabel('t (s)')
+ax.set_ylabel('T (°C)')
+ax2.set_ylabel('Curvatura')
+ax3.set_ylabel('Curvatura')
+ax3.set_xlabel('T (°C)')
+for a in [ax,ax2,ax3]:
+    a.grid()
+    a.legend(ncol=2)
+plt.suptitle('EG 53% FF 47%\nLN2 --> RF\nIdc = [150, 125, 100, 075, 050, 000] dA')    
+
 #salvo figuras
 fig3.savefig('3_EG53FF47_LN2_RF_150_125_100.png',dpi=300)
-fig33.savefig('3_grad_temperatura_EG53FF47_150_125_100.png',dpi=300)
-fig34.savefig('3_grad_temperatura_EG53FF47_075_050_000.png',dpi=300)
+fig33.savefig('3_EG53FF47_grad_temp_150_125_100.png',dpi=300)
+fig34.savefig('3_EG53FF47_grad_temp_075_050_000.png',dpi=300)
+fig35.savefig('3_EG53FF47_templogs_curvatura.png',dpi=300)
+
 #%%4 - 500 uL EG 51 FF 49 LN2 RF 300 - Idc= [150, 125, 100, 075, 050]
 print('-'*50,'\nEG 51 FF 49 LN2 RF300 - Idc= [150, 125, 100, 075, 050] dA','\n')
 temps_500_EG51_FF49 = glob("4_EG51_FF49_LN2_to_RF_150_125_100_075_050/*.csv",recursive=True)
@@ -467,15 +547,48 @@ for a in axs:
 axs[2].set_xlabel('t (s)')
 fig44.suptitle('4.4 - EG 51% FF 49% - LN2 --> RF - Idc = [075, 050, 100] dA')
 
-fig4.savefig('4_EG51FF49_LN2_RF_Idc.png',dpi=300)
-fig43.savefig('4_grad_temperatura_EG51FF49_150_125_100.png',dpi=300)
-fig44.savefig('4_grad_temperatura_EG51FF49_075_050_000.png',dpi=300)
-# #%% Salvo figuras
-# figs=[fig1,fig2,fig3,fig4]
-# names=['EG55FF45_LN2_RF','EG55FF45_LN2_RF_Idc','EG53FF47_LN2_RF_Idc','EG51FF49_LN2_RF_Idc']
-# for i,fig in enumerate(figs):
-#     fig.savefig(f'{names[i]}.png',dpi=300)
+fig45,(ax,ax2,ax3) = plt.subplots(3,1,figsize=(10,10),constrained_layout=True)
+ax.set_title('Temp vs time',loc='left')
+ax2.set_title('Curvatura vs Temp',loc='left')
+ax3.set_title('Curvatura vs Temp',loc='left')
 
+for i,p in enumerate(temps_500_EG51_FF49):
+    _,time,temp, _ = lector_templog(p)
+    indx_min=np.nonzero(temp==min(temp))[0][0]
+    indx_max=np.nonzero(temp==max(temp[indx_min:]))[0][0]
+    print(temp[indx_min],'-',temp[indx_max])
+    t = time[indx_min:indx_max]    
+    T = temp[indx_min:indx_max]
+    mask= (T > -160) & (T <0)
+    T=T[mask]
+    t=t[mask]
+    _,_,curv = curvatura(T)
+    ax.plot(t-t[0],T,'.-',label=f'H$_0$ = {H0[i]:.0f} kA/m')
+    ax2.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m') 
+    ax3.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')  
+ax.axhspan(-155,-130,color='tab:red',alpha=0.2,zorder=-1)
+ax.axhspan(-70,-40,color='tab:orange',alpha=0.2,zorder=-1)
+
+ax2.axvspan(-155,-130,color='tab:red',alpha=0.2,zorder=-1)
+ax3.axvspan(-70,-40,color='tab:orange',alpha=0.2,zorder=-1)
+
+ax.set_xlim(0,250)
+ax2.set_xlim(-160,-100)
+ax3.set_xlim(-100,00)
+ax.set_xlabel('t (s)')
+ax.set_ylabel('T (°C)')
+ax2.set_ylabel('Curvatura')
+ax3.set_ylabel('Curvatura')
+ax3.set_xlabel('T (°C)')
+for a in [ax,ax2,ax3]:
+    a.grid()
+    a.legend(ncol=2)
+plt.suptitle('EG 51% FF 49%\nLN2 --> RF\nIdc = [150, 125, 100, 075, 050, 000] dA')    
+#%
+fig4.savefig('4_EG51FF49_LN2_RF_150_125_100_075_050_000.png',dpi=300)
+fig43.savefig('4_EG51FF49_grad_temp_150_125_100.png',dpi=300)
+fig44.savefig('4_EG51FF49_grad_temp_075_050_000.png',dpi=300)
+fig45.savefig('4_EG51FF49_grad_temp_150_125_100_075_050_000.png',dpi=300)
 #%% 19 Junio 
 ''' Ahora pruebo usando del filtro Savitzky-Golay: Ajusta un polinomio local y deriva el polinomio.
 '''
@@ -532,36 +645,8 @@ for n in [g,h]:
 plt.suptitle('EG 55% FF 45% - LN2 --> RF - Idc = [150, 050] dA')    
 plt.savefig('nueva_comparativa_templogs.png',dpi=300)
 # %%
-%matplotlib 
-fig,(ax,ax2) = plt.subplots(2,1,figsize=(10,8),constrained_layout=True)
 
 
-for i,p in enumerate(temps_500_EG55_FF45_2):
-    _,time,temp, _ = lector_templog(p)
-    indx_min=np.nonzero(temp==min(temp))[0][0]
-    indx_max=np.nonzero(temp==max(temp[indx_min:]))[0][0]
-    print(temp[indx_min],'-',temp[indx_max])
-    t = time[indx_min:indx_max]    
-    T = temp[indx_min:indx_max]
+#%% 2- EG 55% FF 45% - LN2 --> RF - Idc = [150 to 000] dA
 
-
-    mask= (T > -160) & (T < -100)
-
-    T=T[mask]
-    t=t[mask]
-    dT=savgol_filter(T,window_length=11,polyorder=3,deriv=1,delta=1.0)
-    dTT=savgol_filter(T,window_length=11,polyorder=3,deriv=2,delta=1.0)
-    curv=np.abs(dTT)/(1+dT**2)**1.5
-    #ax.set_xlim(0,250)
-    ax.plot(t-t[0],T,'.-',label=f'H$_0$ = {H0[i]:.0f} kA/m')
-    ax2.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')   
-    # ax2.set_xlim(-170,-100)
-
-for a in [ax,ax2]:
-    a.set_xlabel('t (s)')
-    a.set_ylabel('T (°C)')
-    a.grid()
-    a.legend(ncol=2)
-    
-plt.savefig('nueva2_comparativa_templogs.png',dpi=300)
-# %%
+# %% 3- 
