@@ -8,6 +8,8 @@ import os
 import chardet
 import re
 from datetime import datetime
+from scipy.signal import savgol_filter
+from scipy.optimize import curve_fit
 pendiente_HvsI = 3716.3 # 1/m
 ordenada_HvsI = 1297.0 # A/m
 # from clase_resultados import ResultadosESAR
@@ -78,6 +80,7 @@ for a in (ax1,ax2):
 t,t_min=[],[]
 T,T_min=[],[]
 Indx_min,dT=[],[]
+SG=[]
 
 for p in temps_500_CPA_EG55FF45_1:
     _,time,temp_CH1,_ = lector_templog(p)
@@ -88,21 +91,23 @@ for p in temps_500_CPA_EG55FF45_1:
     t_min.append(time[indx_min])
     T_min.append(temp_CH1[indx_min])
     Indx_min.append(indx_min[0])
-
+    SG.append(savgol_filter(temp_CH1,window_length=11,polyorder=3,deriv=1,delta=1.0))
+#%%
 col=['C0','C1','C2']
 fig13,axs=plt.subplots(3,1,figsize=(10,5.5),constrained_layout=True,sharex=True)
 
-for i,(x,y,z) in enumerate(zip(t[:3],T[:3],dT[:3])):
+for i,(x,y,z,w) in enumerate(zip(t[:3],T[:3],dT[:3],SG[:3])):
     l1=axs[i].plot(x[Indx_min[i]:],z[Indx_min[i]:],'.-',c=col[i],label='dT/dt')
+    l3=axs[i].plot(x[Indx_min[i]:],w[Indx_min[i]:],'-.',c=col[i],label='SG')
     ax2=axs[i].twinx()
     ax2.set_ylabel('T (K)')
     ax2.set_yscale('log')
     l2=ax2.plot(x[Indx_min[i]:],y[Indx_min[i]:]+273,c=col[i],label='T')
 
-    handles=l1+l2
+    handles=l1+l2+l3
     labels=[h.get_label() for h in handles]
 
-    axs[i].legend(handles,labels,frameon=True,shadow=True,title=os.path.basename(temps_500_CPA_EG55FF45_1[i]).split('.')[0],loc='lower right',ncol=2)
+    axs[i].legend(handles,labels,frameon=True,shadow=True,title=os.path.basename(temps_500_CPA_EG55FF45_1[i]).split('.')[0],loc='lower right',ncol=3)
 
 for a in axs:
     a.set_ylabel('dT/dt (°C/s)')
@@ -111,7 +116,6 @@ for a in axs:
 
 axs[2].set_xlabel('t (s)')
 fig13.suptitle('1.3 - EG 55% FF 45% - LN2 --> RF')
-
 fig14,ax=plt.subplots(figsize=(10,4),constrained_layout=True)
 
 l1=ax.plot(t[-1][Indx_min[-1]:],dT[-1][Indx_min[-1]:],'.-',label='dT/dt')
@@ -149,7 +153,7 @@ t,t_min=[],[]
 T,T_min=[],[]
 Indx_min,dT=[],[]
 
-fig2,(ax1,ax2) = plt.subplots(2,1,figsize=(9,9),constrained_layout=True)
+fig2,(ax1,ax2) = plt.subplots(2,1,figsize=(10,9),constrained_layout=True)
 ax1.set_title('2.1 - EG 55% FF 45% - LN2 --> RF - Idc = [150, 125, 100] dA',loc='left')
 ax2.set_title('2.2 - EG 55% FF 45% - LN2 --> RF - Idc = [75, 50, 00] dA',loc='left')
 
@@ -187,7 +191,7 @@ for a in (ax1,ax2):
 ax2.set_xlim(60,350)
 ax2.set_xlabel('t (s)')
 
-#% Gradiente 
+#%% Gradiente 
 col=['C0','C1','C2']
 fig23,axs=plt.subplots(3,1,figsize=(10,5.5),constrained_layout=True,sharex=True)
 
@@ -240,6 +244,49 @@ for a in axs:
     a.grid()
 axs[2].set_xlabel('t (s)')
 fig24.suptitle('2.4 - EG 55% FF 45% - LN2 --> RF - Idc = [075, 050, 100] dA')
+#%% Ajuste exponencial
+def expo(t,A,B,tau):
+    return A + B*np.exp(-t/tau)
+Taux=[]
+fits,residuos = [],[]
+for i,(x,y) in enumerate(zip(t,T)):
+
+    t_aux,T_aux=x[Indx_min[i]:],y[Indx_min[i]:]
+    p0 = [T_aux[-1], T_aux[0]-T_aux[-1], 200]   # estimaciones iniciales
+
+    (A,B,tau),_ = curve_fit(expo,t_aux,T_aux,p0=p0)
+
+    print(f'A   = {A:.2f} °C  |  B   = {B:.2f} °C  |  tau = {tau:.1f} s')
+
+    #%
+    Tfit = expo(t_aux,A=A,B=B,tau=tau)
+    fits.append(Tfit)
+    res = T_aux - Tfit
+    residuos.append(res)
+    Taux.append(T_aux)
+    # tfit = np.linspace(t_aux.min(),t_aux.max(),1000)
+    fig,(ax1,ax2)=plt.subplots(2,1,sharex=False,figsize=(8,6),constrained_layout=True)
+    ax1.set_title('Temp vs t',loc='left')
+    ax1.plot(t_aux-t_aux[0],T_aux,'.',label='Datos')
+    ax1.plot(t_aux-t_aux[0],Tfit,'-',color='red',lw=2,label='Ajuste')
+
+    ax2.set_title('Residuo vs Temp',loc='left')
+    ax2.plot(T_aux,res,'.-')
+    ax2.axhline(0,c='k',ls='-')
+    ax1.set_xlabel('t (s)')
+    ax2.set_xlabel('Temp (C)')
+    ax1.legend()
+    ax1.grid()
+    ax2.grid()
+    ax2.set_xlim(-175,0)
+
+#%%
+fig,ax = plt.subplots(figsize=(8,4),constrained_layout=True)
+
+for i, res in enumerate(residuos):
+    ax.plot(Taux[i],res)
+ax.grid()
+ax.set_xlim(-175,0)
 #%%
 fig25,(ax,ax2,ax3) = plt.subplots(3,1,figsize=(10,10),constrained_layout=True)
 ax.set_title('Temp vs time',loc='left')
