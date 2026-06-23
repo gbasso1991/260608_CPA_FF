@@ -36,7 +36,12 @@ def curvatura(T):
     dTT=savgol_filter(T,window_length=11,polyorder=3,deriv=2,delta=1.0)
     curv=np.abs(dTT)/(1+dT**2)**1.5
     return dT,dTT,curv
+#%% Exponencial
+def expo(t,A,B,tau):
+    return A + B*np.exp(-t/tau)
 
+def biexpo(t,A,B1,tau1,B2,tau2):
+    return A + B1*np.exp(-t/tau1) + B2*np.exp(-t/tau2)
 #%% 1- 500uL EG 55 FF 45 LN2 RF300-152
 print('-'*50,'\nEG 55 FF 45 LN2 RF300-152','\n')
 temps_500_CPA_EG55FF45_1 = glob("1_LN2_to_RF/*.csv",recursive=True)
@@ -92,7 +97,7 @@ for p in temps_500_CPA_EG55FF45_1:
     T_min.append(temp_CH1[indx_min])
     Indx_min.append(indx_min[0])
     SG.append(savgol_filter(temp_CH1,window_length=11,polyorder=3,deriv=1,delta=1.0))
-#%%
+
 col=['C0','C1','C2']
 fig13,axs=plt.subplots(3,1,figsize=(10,5.5),constrained_layout=True,sharex=True)
 
@@ -191,7 +196,7 @@ for a in (ax1,ax2):
 ax2.set_xlim(60,350)
 ax2.set_xlabel('t (s)')
 
-#%% Gradiente 
+#% Gradiente 
 col=['C0','C1','C2']
 fig23,axs=plt.subplots(3,1,figsize=(10,5.5),constrained_layout=True,sharex=True)
 
@@ -244,69 +249,35 @@ for a in axs:
     a.grid()
 axs[2].set_xlabel('t (s)')
 fig24.suptitle('2.4 - EG 55% FF 45% - LN2 --> RF - Idc = [075, 050, 100] dA')
-#%% Ajuste exponencial
-def expo(t,A,B,tau):
-    return A + B*np.exp(-t/tau)
-Taux=[]
-fits,residuos = [],[]
-for i,(x,y) in enumerate(zip(t,T)):
 
-    t_aux,T_aux=x[Indx_min[i]:],y[Indx_min[i]:]
-    p0 = [T_aux[-1], T_aux[0]-T_aux[-1], 200]   # estimaciones iniciales
-
-    (A,B,tau),_ = curve_fit(expo,t_aux,T_aux,p0=p0)
-
-    print(f'A   = {A:.2f} °C  |  B   = {B:.2f} °C  |  tau = {tau:.1f} s')
-
-    #%
-    Tfit = expo(t_aux,A=A,B=B,tau=tau)
-    fits.append(Tfit)
-    res = T_aux - Tfit
-    residuos.append(res)
-    Taux.append(T_aux)
-    # tfit = np.linspace(t_aux.min(),t_aux.max(),1000)
-    fig,(ax1,ax2)=plt.subplots(2,1,sharex=False,figsize=(8,6),constrained_layout=True)
-    ax1.set_title('Temp vs t',loc='left')
-    ax1.plot(t_aux-t_aux[0],T_aux,'.',label='Datos')
-    ax1.plot(t_aux-t_aux[0],Tfit,'-',color='red',lw=2,label='Ajuste')
-
-    ax2.set_title('Residuo vs Temp',loc='left')
-    ax2.plot(T_aux,res,'.-')
-    ax2.axhline(0,c='k',ls='-')
-    ax1.set_xlabel('t (s)')
-    ax2.set_xlabel('Temp (C)')
-    ax1.legend()
-    ax1.grid()
-    ax2.grid()
-    ax2.set_xlim(-175,0)
-
-#%%
-fig,ax = plt.subplots(figsize=(8,4),constrained_layout=True)
-
-for i, res in enumerate(residuos):
-    ax.plot(Taux[i],res)
-ax.grid()
-ax.set_xlim(-175,0)
-#%%
+#% Curvatura
 fig25,(ax,ax2,ax3) = plt.subplots(3,1,figsize=(10,10),constrained_layout=True)
 ax.set_title('Temp vs time',loc='left')
 ax2.set_title('Curvatura vs Temp',loc='left')
 ax3.set_title('Curvatura vs Temp',loc='left')
 
 for i,p in enumerate(temps_500_EG55_FF45_2):
-    _,time,temp, _ = lector_templog(p)
-    indx_min=np.nonzero(temp==min(temp))[0][0]
-    indx_max=np.nonzero(temp==max(temp[indx_min:]))[0][0]
+    _,time,temp,_ = lector_templog(p)
+
+    indx_min = np.nonzero(temp==min(temp))[0][0]
+    indx_max = np.nonzero(temp==max(temp[indx_min:]))[0][0]
+
     print(temp[indx_min],'-',temp[indx_max])
-    t = time[indx_min:indx_max]    
-    T = temp[indx_min:indx_max]
-    mask= (T > -160) & (T <0)
-    T=T[mask]
-    t=t[mask]
-    _,_,curv = curvatura(T)
-    ax.plot(t-t[0],T,'.-',label=f'H$_0$ = {H0[i]:.0f} kA/m')
-    ax2.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m') 
-    ax3.plot(T,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')  
+
+    t_curv = time[indx_min:indx_max]
+    T_curv = temp[indx_min:indx_max]
+
+    mask = (T_curv > -160) & (T_curv < 0)
+
+    T_curv = T_curv[mask]
+    t_curv = t_curv[mask]
+
+    _,_,curv = curvatura(T_curv)
+
+    ax.plot(t_curv-t_curv[0],T_curv,'.-',label=f'H$_0$ = {H0[i]:.0f} kA/m')
+    ax2.plot(T_curv,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')
+    ax3.plot(T_curv,curv,'.-',label=f'H$_0$ = {H0[i]:.1f} kA/m')
+
 ax.axhspan(-150,-130,color='tab:red',alpha=0.2,zorder=-1)
 ax.axhspan(-60,-40,color='tab:orange',alpha=0.2,zorder=-1)
 
@@ -315,23 +286,115 @@ ax3.axvspan(-60,-40,color='tab:orange',alpha=0.2,zorder=-1)
 
 ax.set_xlim(0,250)
 ax2.set_xlim(-160,-100)
-ax3.set_xlim(-100,00)
+ax3.set_xlim(-100,0)
+
 ax.set_xlabel('t (s)')
 ax.set_ylabel('T (°C)')
 ax2.set_ylabel('Curvatura')
 ax3.set_ylabel('Curvatura')
 ax3.set_xlabel('T (°C)')
+
 for a in [ax,ax2,ax3]:
     a.grid()
     a.legend(ncol=2)
-plt.suptitle('EG 55% FF 45%\nLN2 --> RF\nIdc = [150, 125, 100, 075, 050, 000] dA')    
+
+plt.suptitle('EG 55% FF 45%\nLN2 --> RF\nIdc = [150, 125, 100, 075, 050, 000] dA')
+#%% Ajuste exponencial y bi-exponencial
+Taux=[]
+fits_exp=[]
+fits_biexp=[]
+residuos_exp=[]
+residuos_biexp=[]
+
+for i,(x,y) in enumerate(zip(t,T)):
+    t_aux,T_aux = x[Indx_min[i]:],y[Indx_min[i]:]
+    p0_exp = [T_aux[-1],T_aux[0]-T_aux[-1],200]
+
+    (A,B,tau),_ = curve_fit(expo,t_aux,T_aux,p0=p0_exp)     # Ajuste exponencial simple
+
+
+    Tfit_exp = expo(t_aux,A,B,tau)
+    res_exp = T_aux - Tfit_exp
+
+    # Ajuste bi-exponencial
+    p0_bi = [T_aux[-1],0.7*(T_aux[0]-T_aux[-1]),50,0.3*(T_aux[0]-T_aux[-1]),300]
+
+    (A2,B1,tau1,B2,tau2),_ = curve_fit(biexpo,t_aux,
+                                       T_aux,p0=p0_bi,
+                                       maxfev=10000)
+
+    Tfit_bi = biexpo(t_aux,A2,B1,tau1,B2,tau2)
+    res_bi = T_aux - Tfit_bi
+
+    # Métricas
+    rmse_exp = np.sqrt(np.mean(res_exp**2))
+    rmse_bi  = np.sqrt(np.mean(res_bi**2))
+
+    r2_exp = 1 - np.sum(res_exp**2)/np.sum((T_aux-T_aux.mean())**2)
+    r2_bi  = 1 - np.sum(res_bi**2)/np.sum((T_aux-T_aux.mean())**2)
+
+    print(f'H0 = {H0[i]:.1f} kA/m')
+    print(f'Exp:   tau = {tau:6.1f} s   | RMSE = {rmse_exp:6.3f} °C | R² = {r2_exp:6.6f}')
+    print(f'BiExp: tau1 = {tau1:6.1f} s | tau2 = {tau2:6.1f} s | RMSE = {rmse_bi:6.3f} °C | R² = {r2_bi:6.6f}')
+    print('-'*80)
+
+    Taux.append(T_aux)
+
+    fits_exp.append(Tfit_exp)
+    fits_biexp.append(Tfit_bi)
+
+    residuos_exp.append(res_exp)
+    residuos_biexp.append(res_bi)
+
+    # Figura
+    fig,(ax1,ax2) = plt.subplots(2,1,figsize=(8,5),constrained_layout=True)
+    
+    ax1.plot(t_aux-t_aux[0],T_aux,'.',ms=3,label='Datos')
+    ax1.plot(t_aux-t_aux[0],Tfit_exp,'-',lw=2,label='Exp.')
+    ax1.plot(t_aux-t_aux[0],Tfit_bi,'--',lw=2,label='Bi-exp.')
+
+    ax1.set_title('Temperatura vs tiempo',loc='left')
+    ax1.set_ylabel('T (°C)')
+    ax1.set_xlabel('t (s)')
+    ax2.set_title('Residuos vs temperatura',loc='left')
+
+    ax2.plot(T_aux,res_exp,'.-',label='Residuo exp.')
+    ax2.plot(T_aux,res_bi,'.-',label='Residuo bi-exp.')
+    ax2.axhline(0,color='k',lw=1)
+
+    ax2.set_xlim(-175,0)
+    ax2.set_xlabel('T (°C)')
+    ax2.set_ylabel('Residuo (°C)')
+    for a in [ax1,ax2]:
+        a.grid()
+        a.legend()
+
+    plt.suptitle(f'2.5 - EG 55% FF 45% - LN2 → RF - H$_0$ = {H0[i]:.1f} kA/m')
+#%% Ploteo todos los resuiduos
+fig26,ax = plt.subplots(figsize=(8,4),constrained_layout=True)
+
+# 
+# plot(Taux[i], residuos_exp[i],'o-',label=f'{H0[i]:.1f}')
+
+for i in range(len(residuos_biexp)):
+    plt.plot(Taux[i], residuos_biexp[i],'.-',label=f'{H0[i]:.1f}')
+
+# ax.axhspan(-150,-130,color='tab:red',alpha=0.2,zorder=-1)
+# ax.axhspan(-60,-40,color='tab:orange',alpha=0.2,zorder=-1)
+
+ax.axvspan(-150,-130,color='tab:red',alpha=0.2,zorder=-1)
+ax.axvspan(-60,-40,color='tab:orange',alpha=0.2,zorder=-1)
+ax.grid()
+ax.legend(title=' H$_0$ (kA/m) \nExponencial | Biexponcial',loc='lower right',ncol=2)
+ax.set_xlim(-170,0)
+ax.set_title('Residuos vs Temp - EG 55% FF 45%',loc='left')
 
 #salvo figuras
 fig2.savefig('2_EG55_FF45_LN2_to_RF_150_125_100.png',dpi=300)
 fig23.savefig('2_EG55_FF45_grad_temp_150_125_100.png',dpi=300)
 fig24.savefig('2_EG55_FF45_grad_temp_075_050_000.png',dpi=300)
 fig25.savefig('2_EG55_FF45_templogs_curvatura.png',dpi=300)
-
+fig26.savefig('2_EG55_FF45_templogs_residuos.png',dpi=300)
 #%%3 - 500 uL EG 53 FF 47 LN2 RF 300 Idc = [150, 125, 100, 075, 050]
 print('-'*50,'\nEG 53 FF 47 LN2 RF300- Idc= [150, 125, 100, 075, 050] dA','\n')
 
